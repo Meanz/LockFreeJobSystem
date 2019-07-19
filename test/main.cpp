@@ -24,14 +24,22 @@ int fib(int n)
 
 void empty_job(const void* p)
 {
-    fib(100000);
+  //  fib(100000);
+}
+
+/* rdtsc */
+extern __inline unsigned long long
+    __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+    rdtsc (void)
+{
+    return __builtin_ia32_rdtsc ();
 }
 
 void fib_test()
 {
     JobSystem job_system;
 
-    usleep(10000); //Sleep 10 ms for thread to come up and running
+    usleep(20000); //Sleep 10 ms for thread to come up and running
 
     //Benchmark one single run
     const int num_jobs = 4096;
@@ -48,7 +56,11 @@ void fib_test()
     qDebug() << "Actual job takes " << single_thread_1_run << " milliseconds ";
 
     //Benchmark job system runs
+    for(std::size_t k=0; k < 1; k++)
+    {
+
     stopwatch.Start();
+    std::size_t r1 = rdtsc();
     for(std::size_t n=0; n < loops; n++)
     {
         Job* root = job_system.create_job(empty_job);
@@ -60,12 +72,18 @@ void fib_test()
         job_system.enqueue(root);
         job_system.wait(root);
     }
+    std::size_t r2 = rdtsc();
     stopwatch.Stop();
     //4096 jobs over this span
     double ms_per_job = stopwatch.ElapsedMilliseconds() / loops / num_jobs;
+    std::size_t cycles_per_job = (r2 - r1) / loops / num_jobs;
 
     qInfo() << "Time: " << stopwatch.ElapsedMilliseconds() << "ms | per run:" <<
         ms_per_job << "ms | calculated overhead: " << (ms_per_job - single_thread_1_run);
+    qInfo() << "Total Cycles: " << (r2 - r1) << " | per job: " << cycles_per_job;
+
+
+    }
 }
 
 #include <QApplication>
@@ -86,9 +104,9 @@ int main(int argc, char *argv[])
     //SimplePhysicsDemo spd;
     //spd.run();
 
-    simple_physics_demo(argc, argv);
+    //simple_physics_demo(argc, argv);
 
-    //fib_test();
+    fib_test();
     //std::function<void()> fn = []() {};
     //qDebug() << sizeof(fn);
 

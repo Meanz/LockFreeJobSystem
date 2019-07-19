@@ -12,8 +12,12 @@ struct Job
     JobFunction pfn;
     Job* parent;
     std::atomic<uint32_t> unfinished_jobs;
-    char padding[4];
+    char padding[48];
+    std::atomic<uint32_t> continuation_count;
+    Job* continuations[15];
 };
+//The job struct is 3x 64 bytes,
+//cacheline size: 64 bytes
 
 template<std::size_t Size = 4096u,
          std::size_t Mask = Size - 1u>
@@ -103,20 +107,21 @@ public:
         return nullptr;
     }
 
-    bool is_empty()
+    bool is_empty() const
     {
         return m_bottom <= m_top;
     }
 
-    std::size_t size()
+    std::size_t size() const
     {
         return m_bottom - m_top;
     }
 
 private:
-    Job* m_jobs[Size];
-    uint32_t m_bottom = 0;
-    uint32_t m_top = 0;
+    Job* m_jobs[Size];      //8
+    uint32_t m_bottom = 0;  //4
+    uint32_t m_top = 0;     //4
+    //char padding[48];
 };
 
 class JobAllocator
@@ -179,19 +184,9 @@ public:
      */
     void wait(const Job* job);
 
-    /**
-     * @brief get_queue
-     * @return
-     */
-    WorkStealingQueue<>* get_queue(std::size_t idx);
-
-    template<typename T>
-    void parlell_for(std::vector<T> set, JobFunction jf)
-    {
-    }
-
 private:
     std::vector<std::unique_ptr<Worker>> m_workers;
+    std::vector<WorkStealingQueue<>*> m_queues;
     JobAllocator m_job_allocator;
 };
 

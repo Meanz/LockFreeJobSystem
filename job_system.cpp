@@ -8,12 +8,20 @@ JobSystem::JobSystem(std::size_t num_workers)
     //Initialize workers
     assert(num_workers != 0);
 
-    //Create workers
     m_workers.resize(num_workers);
-    m_workers[0] = std::make_unique<Worker>(0, num_workers, *this);
+    m_queues.resize(num_workers);
+
+    //Create queues
+    for(std::size_t i=0; i < num_workers; i++)
+    {
+        m_queues[i] = new WorkStealingQueue<>();
+    }
+
+    //Create workers
+    m_workers[0] = std::make_unique<Worker>(0, num_workers, *this, m_queues.data());
     for(std::size_t i=1; i < num_workers; i++)
     {
-        m_workers[i] = std::make_unique<Worker>(i, num_workers, *this);
+        m_workers[i] = std::make_unique<Worker>(i, num_workers, *this, m_queues.data());
         m_workers[i]->set_active(true);
     }
     //Start workers
@@ -31,6 +39,12 @@ JobSystem::~JobSystem()
         m_workers[i]->get_thread().join();
     }
     m_workers.clear();
+    //Destroy all queues
+    for(std::size_t i=0; i < m_queues.size(); i++)
+    {
+        delete m_queues[i];
+    }
+    m_queues.clear();
 }
 
 Job* JobSystem::create_job(JobFunction function)
@@ -74,9 +88,4 @@ void JobSystem::wait(const Job* job)
     {
         m_workers[0]->fetch_and_execute();
     }
-}
-
-WorkStealingQueue<>* JobSystem::get_queue(std::size_t idx)
-{
-    return m_workers[idx]->get_queue();
 }
