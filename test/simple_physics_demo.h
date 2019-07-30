@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "job_system.h"
+#include "mjob.hpp"
 #include "test/vector.h"
 
 class SimplePhysicsDemo : public QWidget

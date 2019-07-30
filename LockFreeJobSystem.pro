@@ -28,6 +28,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     job_system.h \
     job_worker.h \
+    mjob.hpp \
     test/simple_physics_demo.h \
     test/timing.h \
     test/vector.h

@@ -4,7 +4,7 @@
 #include <unistd.h> //For usleep
 
 #include "timing.h"
-#include "job_system.h"
+#include "mjob.hpp"
 #include "vector.h"
 #include <functional>
 
